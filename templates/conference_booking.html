@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>RoomSync - Conference Booking</title>
+<style>
+body { font-family: Arial; padding: 30px; background:#f4f6f9; }
+input, select, button { margin:5px; padding:6px; }
+.card { background:white; padding:20px; border-radius:10px; margin-bottom:20px; }
+.booking { background:#eee; padding:10px; margin:5px 0; border-radius:6px; }
+</style>
+</head>
+<body>
+
+<h2>Conference Room Booking</h2>
+
+<div class="card">
+<select id="room">
+<option value="">Select Room</option>
+<option value="Boardroom A">Boardroom A</option>
+<option value="Meeting Room B">Meeting Room B</option>
+<option value="Meeting Room C">Meeting Room C</option>
+</select>
+
+<input type="text" id="title" placeholder="Meeting Title">
+
+<input type="date" id="date">
+<input type="time" id="start">
+<input type="time" id="end">
+
+<input type="text" id="user" placeholder="Your Name">
+
+<button onclick="bookRoom()">Book Room</button>
+</div>
+
+<h3>All Bookings</h3>
+<div id="bookingList"></div>
+
+<script>
+
+async function loadBookings() {
+    const res = await fetch("/get_bookings");
+    const data = await res.json();
+
+    const list = document.getElementById("bookingList");
+    list.innerHTML = "";
+
+    data.forEach(b => {
+        list.innerHTML += `
+        <div class="booking">
+            <strong>${b.room}</strong> | ${b.date} | ${b.start} - ${b.end}<br>
+            ${b.title} <br>
+            Booked By: ${b.bookedBy}
+            <br>
+            <button onclick="cancelBooking(${b.id})">Cancel</button>
+        </div>`;
+    });
+}
+
+async function bookRoom() {
+
+    const room = document.getElementById("room").value;
+    const title = document.getElementById("title").value;
+    const date = document.getElementById("date").value;
+    const start = document.getElementById("start").value;
+    const end = document.getElementById("end").value;
+    const user = document.getElementById("user").value;
+
+    if(!room || !title || !date || !start || !end || !user){
+        alert("Please fill all fields");
+        return;
+    }
+
+    const res = await fetch("/book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            room: room,
+            title: title,
+            date: date,
+            start: start,
+            end: end,
+            bookedBy: user
+        })
+    });
+
+    const result = await res.json();
+
+    if(!result.success){
+        alert("Booking Clash! Room already booked for this time.");
+        return;
+    }
+
+    alert("Room Booked Successfully!");
+    loadBookings();
+}
+
+async function cancelBooking(id){
+    await fetch("/cancel/" + id);
+    loadBookings();
+}
+
+loadBookings();
+
+</script>
+
+</body>
+</html>
