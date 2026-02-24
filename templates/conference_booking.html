@@ -1,108 +1,787 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>RoomSync - Conference Booking</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoomSync — Conference Room Booking</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-body { font-family: Arial; padding: 30px; background:#f4f6f9; }
-input, select, button { margin:5px; padding:6px; }
-.card { background:white; padding:20px; border-radius:10px; margin-bottom:20px; }
-.booking { background:#eee; padding:10px; margin:5px 0; border-radius:6px; }
+  :root {
+    --bg: #0f0f13;
+    --surface: #16161d;
+    --card: #1e1e28;
+    --border: #2a2a38;
+    --accent: #e8c547;
+    --accent2: #4fc3f7;
+    --danger: #ff6b6b;
+    --success: #69db7c;
+    --text: #e8e8f0;
+    --muted: #7a7a9a;
+    --font-display: 'DM Serif Display', serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ---- AUTH SCREEN ---- */
+  #auth-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 30% 20%, #1a1a2e 0%, var(--bg) 60%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  #auth-screen::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(232,197,71,0.08) 0%, transparent 70%);
+    top: -100px; right: -100px;
+    pointer-events: none;
+  }
+
+  .auth-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 52px 48px;
+    width: 420px;
+    max-width: 95vw;
+    position: relative;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+    animation: fadeUp 0.6s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .auth-logo {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  .auth-sub {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-bottom: 36px;
+    font-weight: 300;
+  }
+
+  .auth-box label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .auth-box input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 16px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 20px;
+  }
+
+  .auth-box input:focus { border-color: var(--accent); }
+
+  .auth-error {
+    background: rgba(255,107,107,0.12);
+    border: 1px solid rgba(255,107,107,0.3);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    color: var(--danger);
+    margin-bottom: 18px;
+    display: none;
+  }
+
+  .btn-primary {
+    width: 100%;
+    background: var(--accent);
+    color: #0f0f13;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .auth-note {
+    text-align: center;
+    margin-top: 18px;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  /* ---- MAIN APP ---- */
+  #app { display: none; min-height: 100vh; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    color: var(--accent);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .user-badge {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+
+  .user-badge span { color: var(--accent2); font-weight: 500; }
+
+  .btn-logout {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 14px;
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 24px;
+  }
+
+  .page-title {
+    font-family: var(--font-display);
+    font-size: 2.2rem;
+    margin-bottom: 6px;
+  }
+
+  .page-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 36px; }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 28px;
+    align-items: start;
+  }
+
+  @media(max-width: 780px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+  }
+
+  .card-title {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-title .icon {
+    width: 32px; height: 32px;
+    background: rgba(232,197,71,0.12);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .form-group { margin-bottom: 18px; }
+
+  .form-group label {
+    display: block;
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .form-group select,
+  .form-group input[type="date"],
+  .form-group input[type="time"],
+  .form-group input[type="text"] {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .form-group select:focus,
+  .form-group input:focus { border-color: var(--accent); }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .btn-book {
+    width: 100%;
+    margin-top: 8px;
+    background: var(--accent);
+    color: #0f0f13;
+    border: none;
+    border-radius: 10px;
+    padding: 13px;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-book:hover { opacity: 0.88; transform: translateY(-1px); }
+
+  .rooms-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  @media(max-width: 500px) { .rooms-grid { grid-template-columns: 1fr 1fr; } }
+
+  .room-chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-align: center;
+    transition: all 0.2s;
+  }
+
+  .room-chip.busy { border-color: rgba(255,107,107,0.4); background: rgba(255,107,107,0.06); color: var(--danger); }
+  .room-chip.free { border-color: rgba(105,219,124,0.4); background: rgba(105,219,124,0.06); color: var(--success); }
+  .room-chip .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; }
+  .room-chip.busy .dot { background: var(--danger); }
+  .room-chip.free .dot { background: var(--success); }
+
+  .bookings-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .booking-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    animation: fadeUp 0.3s ease both;
+    transition: border-color 0.2s;
+  }
+
+  .booking-item:hover { border-color: rgba(79,195,247,0.3); }
+  .booking-item.mine { border-left: 3px solid var(--accent2); }
+
+  .booking-info { flex: 1; }
+
+  .booking-room {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--accent2);
+    margin-bottom: 3px;
+  }
+
+  .booking-details { font-size: 0.78rem; color: var(--muted); }
+
+  .booking-who {
+    font-size: 0.75rem;
+    font-weight: 500;
+    background: var(--card);
+    border-radius: 6px;
+    padding: 4px 8px;
+    white-space: nowrap;
+  }
+
+  .btn-cancel {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 5px 10px;
+    color: var(--danger);
+    font-size: 0.75rem;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-cancel:hover { background: rgba(255,107,107,0.1); border-color: var(--danger); }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .empty-state div { font-size: 2rem; margin-bottom: 10px; }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+
+  .modal-overlay.active { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: var(--card);
+    border: 1px solid rgba(255,107,107,0.4);
+    border-radius: 18px;
+    padding: 36px;
+    max-width: 420px;
+    width: 90vw;
+    transform: scale(0.9);
+    transition: transform 0.25s;
+    box-shadow: 0 0 60px rgba(255,107,107,0.15);
+  }
+
+  .modal-overlay.active .modal { transform: scale(1); }
+
+  .modal-icon { font-size: 2.5rem; margin-bottom: 14px; }
+  .modal-title { font-family: var(--font-display); font-size: 1.4rem; color: var(--danger); margin-bottom: 10px; }
+  .modal-body { color: var(--muted); font-size: 0.9rem; line-height: 1.6; margin-bottom: 24px; }
+  .modal-body strong { color: var(--text); }
+
+  .btn-close-modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 24px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s;
+  }
+
+  .btn-close-modal:hover { background: var(--card); border-color: var(--accent); }
+
+  .filter-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+    align-items: center;
+  }
+
+  .filter-bar select,
+  .filter-bar input {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .filter-bar input { flex: 1; min-width: 140px; }
+
+  .badge-count {
+    background: rgba(232,197,71,0.15);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    color: var(--accent);
+    font-weight: 600;
+    margin-left: auto;
+  }
+
+  #toast {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    background: var(--success);
+    color: #0a1f0d;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    z-index: 2000;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+  }
+
+  #toast.show { transform: translateY(0); opacity: 1; }
 </style>
 </head>
 <body>
 
-<h2>Conference Room Booking</h2>
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">RoomSync</div>
+    <div class="auth-sub">Internal access only — your firm's conference booking system</div>
 
-<div class="card">
-<select id="room">
-<option value="">Select Room</option>
-<option value="Boardroom A">Boardroom A</option>
-<option value="Meeting Room B">Meeting Room B</option>
-<option value="Meeting Room C">Meeting Room C</option>
-</select>
+    <label>Your Name / Staff ID</label>
+    <input type="text" id="auth-name" placeholder="e.g. Rahul Sharma" autocomplete="off">
 
-<input type="text" id="title" placeholder="Meeting Title">
+    <label>Firm Access Passcode</label>
+    <input type="password" id="auth-pass" placeholder="••••••" onkeydown="if(event.key==='Enter') login()">
 
-<input type="date" id="date">
-<input type="time" id="start">
-<input type="time" id="end">
+    <div class="auth-error" id="auth-error">Incorrect passcode. Contact your admin.</div>
 
-<input type="text" id="user" placeholder="Your Name">
+    <button class="btn-primary" onclick="login()">Enter Portal →</button>
 
-<button onclick="bookRoom()">Book Room</button>
+    <div class="auth-note">🔒 Restricted to authorised staff only</div>
+  </div>
 </div>
 
-<h3>All Bookings</h3>
-<div id="bookingList"></div>
+<div id="app">
+  <header>
+    <div class="logo">RoomSync</div>
+    <div class="header-right">
+      <div class="user-badge">Logged in as <span id="current-user-display"></span></div>
+      <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-title">Conference Room Booking</div>
+    <div class="page-sub">Book a room for your meeting. Clashes are automatically detected and blocked.</div>
+
+    <div class="grid-2">
+      <div>
+        <div class="card">
+          <div class="card-title">
+            <div class="icon">📅</div>
+            New Booking
+          </div>
+
+          <div class="form-group">
+            <label>Conference Room</label>
+            <select id="f-room">
+              <option value="">— Select a room —</option>
+              <option value="Boardroom A">Boardroom A (12 seats)</option>
+              <option value="Meeting Room B">Meeting Room B (6 seats)</option>
+              <option value="Meeting Room C">Meeting Room C (6 seats)</option>
+              <option value="Training Hall">Training Hall (30 seats)</option>
+              <option value="Huddle Pod 1">Huddle Pod 1 (4 seats)</option>
+              <option value="Huddle Pod 2">Huddle Pod 2 (4 seats)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Meeting Title / Purpose</label>
+            <input type="text" id="f-title" placeholder="e.g. Q3 Review, Client Call...">
+          </div>
+
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="f-date">
+          </div>
+
+          <div class="form-group">
+            <label>Time Slot</label>
+            <div class="form-row">
+              <input type="time" id="f-start" title="Start time">
+              <input type="time" id="f-end" title="End time">
+            </div>
+            <small style="color:var(--muted);font-size:0.75rem;margin-top:6px;display:block;">Start time → End time</small>
+          </div>
+
+          <button class="btn-book" onclick="bookRoom()">✓ Confirm Booking</button>
+        </div>
+
+        <div class="card" style="margin-top:20px;">
+          <div class="card-title">
+            <div class="icon">🏢</div>
+            Live Room Status <span style="font-size:0.72rem;color:var(--muted);font-family:var(--font-body);font-weight:300;margin-left:4px;">— today</span>
+          </div>
+          <div class="rooms-grid" id="rooms-status"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-title">
+            <div class="icon">📋</div>
+            All Bookings
+          </div>
+
+          <div class="filter-bar">
+            <select id="filter-room" onchange="renderBookings()">
+              <option value="">All Rooms</option>
+              <option value="Boardroom A">Boardroom A</option>
+              <option value="Meeting Room B">Meeting Room B</option>
+              <option value="Meeting Room C">Meeting Room C</option>
+              <option value="Training Hall">Training Hall</option>
+              <option value="Huddle Pod 1">Huddle Pod 1</option>
+              <option value="Huddle Pod 2">Huddle Pod 2</option>
+            </select>
+            <input type="date" id="filter-date" onchange="renderBookings()">
+            <span class="badge-count" id="booking-count">0</span>
+          </div>
+
+          <div class="bookings-list" id="bookings-list"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="clash-modal">
+  <div class="modal">
+    <div class="modal-icon">⚠️</div>
+    <div class="modal-title">Booking Clash Detected!</div>
+    <div class="modal-body" id="clash-details"></div>
+    <button class="btn-close-modal" onclick="closeModal()">Understood — Change My Selection</button>
+  </div>
+</div>
+
+<div id="toast"></div>
 
 <script>
+  // ==============================
+  // CONFIG — change this passcode!
+  // ==============================
+  const FIRM_PASSCODE = 'firm2024';
 
-async function loadBookings() {
-    const res = await fetch("/get_bookings");
-    const data = await res.json();
+  let currentUser = null;
+  let bookings = [];
 
-    const list = document.getElementById("bookingList");
-    list.innerHTML = "";
+  // ---- STORAGE ----
+  async function loadBookings() {
+    try {
+      const res = await window.storage.get('roomsync:bookings');
+      if (res && res.value) bookings = JSON.parse(res.value);
+    } catch(e) { bookings = []; }
+  }
 
-    data.forEach(b => {
-        list.innerHTML += `
-        <div class="booking">
-            <strong>${b.room}</strong> | ${b.date} | ${b.start} - ${b.end}<br>
-            ${b.title} <br>
-            Booked By: ${b.bookedBy}
-            <br>
-            <button onclick="cancelBooking(${b.id})">Cancel</button>
-        </div>`;
-    });
-}
+  async function saveBookings() {
+    try { await window.storage.set('roomsync:bookings', JSON.stringify(bookings)); } catch(e) {}
+  }
 
-async function bookRoom() {
+  // ---- AUTH ----
+  function login() {
+    const name = document.getElementById('auth-name').value.trim();
+    const pass = document.getElementById('auth-pass').value;
+    const errEl = document.getElementById('auth-error');
 
-    const room = document.getElementById("room").value;
-    const title = document.getElementById("title").value;
-    const date = document.getElementById("date").value;
-    const start = document.getElementById("start").value;
-    const end = document.getElementById("end").value;
-    const user = document.getElementById("user").value;
+    if (!name) { errEl.textContent = 'Please enter your name or staff ID.'; errEl.style.display = 'block'; return; }
+    if (pass !== FIRM_PASSCODE) { errEl.style.display = 'block'; return; }
 
-    if(!room || !title || !date || !start || !end || !user){
-        alert("Please fill all fields");
-        return;
+    currentUser = name;
+    document.getElementById('current-user-display').textContent = name;
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('f-date').value = today();
+    renderAll();
+  }
+
+  function logout() {
+    currentUser = null;
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('auth-pass').value = '';
+    document.getElementById('auth-error').style.display = 'none';
+  }
+
+  // ---- UTILS ----
+  function today() { return new Date().toISOString().split('T')[0]; }
+  function timeToMins(t) { const [h,m] = t.split(':').map(Number); return h*60+m; }
+
+  function hasClash(newB, ex) {
+    if (newB.room !== ex.room || newB.date !== ex.date) return false;
+    return timeToMins(newB.start) < timeToMins(ex.end) && timeToMins(newB.end) > timeToMins(ex.start);
+  }
+
+  function formatDate(d) {
+    if (!d) return '';
+    return new Date(d+'T12:00:00').toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+  }
+
+  // ---- BOOKING ----
+  async function bookRoom() {
+    const room  = document.getElementById('f-room').value;
+    const title = document.getElementById('f-title').value.trim();
+    const date  = document.getElementById('f-date').value;
+    const start = document.getElementById('f-start').value;
+    const end   = document.getElementById('f-end').value;
+
+    if (!room)  return alert('Please select a conference room.');
+    if (!title) return alert('Please enter a meeting title.');
+    if (!date)  return alert('Please select a date.');
+    if (!start || !end) return alert('Please set start and end times.');
+    if (timeToMins(start) >= timeToMins(end)) return alert('End time must be after start time.');
+
+    const newB = { id: Date.now(), room, title, date, start, end, bookedBy: currentUser };
+
+    const clash = bookings.find(b => hasClash(newB, b));
+    if (clash) {
+      document.getElementById('clash-details').innerHTML =
+        `<strong>${room}</strong> is already booked on <strong>${formatDate(clash.date)}</strong> from <strong>${clash.start}–${clash.end}</strong> by <strong>${clash.bookedBy}</strong> for "<strong>${clash.title}</strong>".<br><br>Please choose a different time or room.`;
+      document.getElementById('clash-modal').classList.add('active');
+      return;
     }
 
-    const res = await fetch("/book", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            room: room,
-            title: title,
-            date: date,
-            start: start,
-            end: end,
-            bookedBy: user
-        })
-    });
+    bookings.push(newB);
+    await saveBookings();
+    resetForm();
+    renderAll();
+    showToast('Room booked successfully!');
+  }
 
-    const result = await res.json();
+  async function cancelBooking(id) {
+    if (!confirm('Cancel this booking?')) return;
+    bookings = bookings.filter(b => b.id !== id);
+    await saveBookings();
+    renderAll();
+    showToast('Booking cancelled.');
+  }
 
-    if(!result.success){
-        alert("Booking Clash! Room already booked for this time.");
-        return;
+  function resetForm() {
+    document.getElementById('f-room').value = '';
+    document.getElementById('f-title').value = '';
+    document.getElementById('f-start').value = '';
+    document.getElementById('f-end').value = '';
+    document.getElementById('f-date').value = today();
+  }
+
+  // ---- RENDER ----
+  function renderAll() { renderBookings(); renderRoomStatus(); }
+
+  function renderBookings() {
+    const fr = document.getElementById('filter-room').value;
+    const fd = document.getElementById('filter-date').value;
+
+    let list = [...bookings].sort((a,b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
+    if (fr) list = list.filter(b => b.room === fr);
+    if (fd) list = list.filter(b => b.date === fd);
+
+    document.getElementById('booking-count').textContent = list.length + ' booking' + (list.length!==1?'s':'');
+
+    const el = document.getElementById('bookings-list');
+    if (!list.length) {
+      el.innerHTML = `<div class="empty-state"><div>📭</div>No bookings found</div>`;
+      return;
     }
 
-    alert("Room Booked Successfully!");
-    loadBookings();
-}
+    el.innerHTML = list.map(b => `
+      <div class="booking-item ${b.bookedBy===currentUser?'mine':''}">
+        <div class="booking-info">
+          <div class="booking-room">🏢 ${b.room}</div>
+          <div class="booking-details">
+            ${formatDate(b.date)} &nbsp;•&nbsp; ${b.start} – ${b.end}<br>
+            <em style="color:var(--text);opacity:0.85">${b.title}</em>
+          </div>
+        </div>
+        <div class="booking-who">${b.bookedBy}</div>
+        ${b.bookedBy===currentUser ? `<button class="btn-cancel" onclick="cancelBooking(${b.id})">✕ Cancel</button>` : ''}
+      </div>
+    `).join('');
+  }
 
-async function cancelBooking(id){
-    await fetch("/cancel/" + id);
-    loadBookings();
-}
+  function renderRoomStatus() {
+    const rooms = ['Boardroom A','Meeting Room B','Meeting Room C','Training Hall','Huddle Pod 1','Huddle Pod 2'];
+    const td = today();
+    const now = new Date();
+    const nowMins = now.getHours()*60 + now.getMinutes();
 
-loadBookings();
+    document.getElementById('rooms-status').innerHTML = rooms.map(r => {
+      const busy = bookings.some(b => b.room===r && b.date===td && timeToMins(b.start)<=nowMins && nowMins<timeToMins(b.end));
+      return `<div class="room-chip ${busy?'busy':'free'}">
+        <span class="dot"></span>${r}
+        <div style="font-size:0.7rem;margin-top:3px;opacity:0.75">${busy?'In use now':'Available'}</div>
+      </div>`;
+    }).join('');
+  }
 
+  function closeModal() { document.getElementById('clash-modal').classList.remove('active'); }
+  document.getElementById('clash-modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = '✓ ' + msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // ---- INIT ----
+  loadBookings().then(() => { if(currentUser) renderAll(); });
+  setInterval(renderRoomStatus, 60000);
 </script>
-
 </body>
 </html>
